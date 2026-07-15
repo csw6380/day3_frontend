@@ -1,0 +1,6 @@
+/* index.css — 전체 페이지 기본값 (Day 1 리셋과 동일, 수정 불필요) */
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: sans-serif;
+}
