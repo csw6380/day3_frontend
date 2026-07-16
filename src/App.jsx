@@ -1,84 +1,162 @@
 import { useState, useEffect } from 'react'
-import './App.css'   // ⚠️ 이 줄 지우면 App.css 무시 (Day 1의 그 버그)
+import './App.css'   // ⚠️ 이 줄이 있어야 App.css 스타일이 적용됩니다
 
 function App() {
   const API_URL = "https://team-00-back.onrender.com";
-  
+
   // 방명록 목록 (서버에서 받아와 채움)
   const [messages, setMessages] = useState([])
 
-  // 입력폼 2칸 — Day 1 입력폼과 동일 패턴 × 2
+  // 입력폼 2칸
   const [name, setName] = useState("")
   const [content, setContent] = useState("")
 
-  // 화면이 뜬 다음 목록 받아오기 (Day 2 패턴)
+  // 꾸미기용 상태 (기능이 아니라 화면 연출용)
+  const [theme, setTheme] = useState("light")        // 라이트/다크 토글
+  const [removingId, setRemovingId] = useState(null) // 삭제될 때 사라지는 애니메이션
+
+  // 화면이 뜬 다음 목록 받아오기
   useEffect(() => {
     fetch(`${API_URL}/messages`)
       .then((res) => res.json())
       .then((data) => setMessages(data))
   }, [])
 
-  // 등록 버튼을 누르면 실행
+  // 등록 버튼(또는 Enter)을 누르면 실행
   const handleSubmit = () => {
+    if (!name.trim() || !content.trim()) return   // 빈 메모가 생기지 않게 막기
+
     fetch(`${API_URL}/messages`, {
-      method: "POST",                                    // 이번엔 GET이 아니라 POST
-      headers: { "Content-Type": "application/json" },   // "JSON 보냅니다" 표시
-      body: JSON.stringify({ name, content }),           // 객체 → JSON 문자열
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, content }),
     })
       .then((res) => res.json())
       .then((newMessage) => {
-        // newMessage = 서버가 RETURNING으로 돌려준 완성된 글 (id, created_at 포함)
-        //
-        // ★ 오늘의 새 문법: spread(...)
-        // "기존 배열을 펼치고, 새 글을 앞에 붙인 '새 배열'을 만든다"
-        // 새 글이 앞인 이유: 서버 정렬(최신이 위)과 화면을 맞추기 위해
-        // messages.push(...)를 안 쓰는 이유: state는 직접 못 바꾼다 (Day 1: setCount와 같은 규칙)
+        // 새 글을 맨 앞에 붙인 '새 배열'로 교체 (state는 직접 못 바꾼다)
         setMessages([newMessage, ...messages])
-
-        setName("")      // 입력칸 비우기
+        setName("")
         setContent("")
       })
   }
 
-  // 삭제 버튼을 누르면 실행 (심화 미션)
+  // 삭제 버튼을 누르면 실행
   const handleDelete = (id) => {
-    fetch(`${API_URL}/messages/${id}`, {   // 템플릿 리터럴 — Day 1 문법
+    setRemovingId(id)   // 해당 카드에 '사라지는' 애니메이션 클래스가 붙음
+
+    fetch(`${API_URL}/messages/${id}`, {
       method: "DELETE",
     })
       .then((res) => res.json())
       .then(() => {
-        // filter: "지운 id만 빼고 남긴 새 배열" — spread와 같은 원리 (직접 안 바꾸고 새로 만든다)
-        setMessages(messages.filter((msg) => msg.id !== id))
+        // 애니메이션(0.3s)이 끝난 뒤 목록에서 실제로 제거
+        setTimeout(() => {
+          setMessages((prev) => prev.filter((msg) => msg.id !== id))
+          setRemovingId(null)
+        }, 300)
       })
   }
 
+  // --- 화면 연출용 작은 도우미들 (새 데이터/API 없이 이미 있는 값만 가공) ---
+
+  // 이름 → 포스트잇 색 톤 (같은 사람은 항상 같은 색)
+  const toneOf = (who) => {
+    let sum = 0
+    for (const ch of who ?? "") sum += ch.codePointAt(0)
+    return sum % 6
+  }
+
+  // 이름 첫 글자 (아바타에 표시)
+  const initialOf = (who) => (who?.trim()?.[0] ?? "?").toUpperCase()
+
+  // created_at → "3분 전" 같은 상대 시간
+  const timeAgo = (iso) => {
+    if (!iso) return ""
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+    if (diff < 60) return "방금 전"
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
+    return `${Math.floor(diff / 86400)}일 전`
+  }
+
   return (
-    <div>
-      <h1>우리 팀 방명록</h1>
+    <div className="app" data-theme={theme}>
+      <div className="board">
+        <header className="board__head">
+          <div className="board__titles">
+            <h1 className="board__title">우리 팀 방명록</h1>
+            <p className="board__subtitle">한 마디씩 남겨주세요 ✿</p>
+          </div>
+          <div className="board__meta">
+            <span className="count">{messages.length}개의 메모</span>
+            <button
+              className="theme-toggle"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              aria-label="라이트/다크 전환"
+              type="button"
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+          </div>
+        </header>
 
-      {/* 입력폼 — value + onChange 짝은 Day 1 입력폼 그대로 */}
-      <div>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="이름"
-        />
-        <input
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="내용"
-        />
-        <button onClick={handleSubmit}>남기기</button>
+        {/* 입력폼 — Enter로도 등록되도록 form 사용 */}
+        <form
+          className="compose"
+          onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
+        >
+          <input
+            className="compose__name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="이름"
+          />
+          <input
+            className="compose__content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="내용을 적어주세요"
+          />
+          <button className="compose__submit" type="submit">남기기</button>
+        </form>
+
+        {messages.length === 0 ? (
+          <div className="empty">아직 메모가 없어요. 첫 메모를 남겨보세요! 📝</div>
+        ) : (
+          <ul className="notes">
+            {messages.map((msg) => (
+              <li
+                key={msg.id}
+                className={
+                  `note note--${toneOf(msg.name)}` +
+                  (removingId === msg.id ? " note--removing" : "")
+                }
+              >
+                <span className="note__tape" aria-hidden="true" />
+                <button
+                  className="note__delete"
+                  onClick={() => handleDelete(msg.id)}
+                  aria-label="삭제"
+                  type="button"
+                >
+                  ×
+                </button>
+
+                <div className="note__head">
+                  <span className="note__avatar">{initialOf(msg.name)}</span>
+                  <span className="note__name">{msg.name}</span>
+                </div>
+
+                <p className="note__content">{msg.content}</p>
+
+                {msg.created_at && (
+                  <time className="note__time">{timeAgo(msg.created_at)}</time>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
-      <ul>
-        {messages.map((msg) => (
-          <li key={msg.id}>
-            <strong>{msg.name}</strong>: {msg.content}
-            <button onClick={() => handleDelete(msg.id)}>삭제</button>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
