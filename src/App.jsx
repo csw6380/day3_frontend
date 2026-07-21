@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
 import './App.css'
 
-// 서버 주소는 여기 한 곳에만 — 배포 때 이 한 줄만 Render 주소로 교체
-const API_URL = 'http://localhost:3000'
+// Vite 환경변수로 API 주소를 관리합니다.
+// 로컬: .env, 배포: Vercel의 Environment Variables에 VITE_API_URL 설정
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 function App() {
   const [messages, setMessages] = useState([])

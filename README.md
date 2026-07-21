@@ -35,3 +35,25 @@ npm run preview
 - `npm run build` — 프로덕션 빌드 생성
 - `npm run preview` — 빌드된 결과 미리보기
 - `npm run lint` — ESLint 검사
+
+## API 주소 설정
+
+1. 로컬에서 환경변수 파일 만들기
+
+```bash
+cp .env.example .env
+```
+
+2. `.env` 파일에서 실제 API 주소로 수정
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+3. Vercel 배포 시 환경변수 설정
+
+- Vercel 프로젝트의 Settings → Environment Variables에서
+- 이름: `VITE_API_URL`
+- 값: 실제 백엔드 URL(예: `https://your-backend.vercel.app`)
+
+> Vite는 `VITE_` 접두사가 붙은 환경변수만 클라이언트에서 사용할 수 있습니다.
