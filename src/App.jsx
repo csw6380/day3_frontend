@@ -10,7 +10,6 @@ const CustomSelect = ({ value, options, onChange }) => {
   
   const selectedOption = options.find(opt => opt.value === value);
 
-  // 메뉴 바깥 클릭 시 닫히도록 처리
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (selectRef.current && !selectRef.current.contains(event.target)) {
@@ -61,9 +60,20 @@ function App() {
   const [commentName, setCommentName] = useState('')
   const [commentContent, setCommentContent] = useState('')
   const [isDarkMode, setIsDarkMode] = useState(true)
-  
-  // 모달 열림/닫힘 상태
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // 💡 [수정완료] 로그인 및 회원가입 상태를 App 컴포넌트 내부로 이동
+  const [currentUser, setCurrentUser] = useState(null)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
+
+  const [signupForm, setSignupForm] = useState({
+    email: '', name: '', nickname: '', password: '', passwordConfirm: ''
+  })
+  
+  const [loginForm, setLoginForm] = useState({
+    email: '', password: ''
+  })
 
   const fetchMessages = () => {
     const query = new URLSearchParams({ search: searchQuery, sort: sortBy, order: sortOrder }).toString();
@@ -72,34 +82,31 @@ function App() {
       .then((data) => setMessages(data))
   }
 
-  // 👇 여기를 수정해 주세요! 👇
   useEffect(() => {
-    // 1. 처음 화면이 켜질 때 한 번 데이터를 불러옵니다.
     fetchMessages()
-
-    // 2. 3초(3000ms)마다 백그라운드에서 조용히 데이터를 다시 불러옵니다.
     const interval = setInterval(() => {
       fetchMessages()
     }, 3000)
-
-    // 3. 화면이 꺼지거나 검색 조건이 바뀔 때 기존 타이머를 삭제하여 충돌을 막습니다.
     return () => clearInterval(interval)
   }, [searchQuery, sortBy, sortOrder])
 
   const handleSubmit = () => {
-    if (!title || !name || !content) return alert('모든 항목을 입력해주세요.');
+    // 💡 로그인 여부 확인
+    if (!currentUser) return alert('로그인 후 이용해주세요.');
+    if (!title || !content) return alert('제목과 내용을 모두 입력해주세요.');
+    
     fetch(`${API_URL}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, name, content }),
+      // 💡 name 필드에 직접 입력값이 아닌 로그인된 유저의 닉네임을 넣습니다.
+      body: JSON.stringify({ title, name: currentUser.nickname, content }),
     })
       .then((res) => res.json())
       .then(() => {
         fetchMessages()
         setTitle('')
-        setName('')
-        setContent('')
-        setIsModalOpen(false) // 등록 후 모달 닫기
+        setContent('') // 💡 name 상태는 더 이상 사용하지 않으므로 초기화 불필요
+        setIsModalOpen(false)
       })
   }
 
@@ -116,18 +123,84 @@ function App() {
   }
 
   const handleCommentSubmit = () => {
-    if (!commentName || !commentContent) return alert('댓글 항목을 모두 입력해주세요.');
+    // 💡 로그인 여부 확인
+    if (!currentUser) return alert('로그인 후 이용해주세요.');
+    if (!commentContent) return alert('댓글 내용을 입력해주세요.');
+
     fetch(`${API_URL}/messages/${selectedMessage.id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: commentName, content: commentContent }),
+      // 💡 name 필드에 로그인된 유저의 닉네임 할당
+      body: JSON.stringify({ name: currentUser.nickname, content: commentContent }),
     })
       .then((res) => res.json())
       .then((newComment) => {
         setComments([...comments, newComment])
-        setCommentName('')
-        setCommentContent('')
+        setCommentContent('') // 💡 commentName 상태는 더 이상 사용하지 않으므로 초기화 불필요
       })
+  }
+
+  // ==== 회원가입 처리 로직 ====
+  // ==== [수정] 진짜 서버와 연동된 회원가입 처리 ====
+  const handleSignup = async () => {
+    const { email, name, nickname, password, passwordConfirm } = signupForm;
+
+    if (!email || !name || !nickname || !password || !passwordConfirm) {
+      return alert('모든 항목을 입력해주세요.');
+    }
+    if (!email.endsWith('@gsm.hs.kr')) {
+      return alert('@gsm.hs.kr 이메일 계정만 가입할 수 있습니다.');
+    }
+    if (password !== passwordConfirm) {
+      return alert('비밀번호가 일치하지 않습니다.');
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, nickname, password })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return alert(data.error); // 서버에서 보낸 에러 메시지 띄우기
+      }
+
+      alert(data.message); // 가입 완료 메시지
+      setIsSignupModalOpen(false);
+      setIsLoginModalOpen(true); // 가입 성공 시 바로 로그인 창 띄우기
+    } catch (error) {
+      alert('서버와 통신 중 오류가 발생했습니다.');
+    }
+  }
+
+  // ==== [수정] 진짜 서버와 연동된 로그인 처리 ====
+  const handleLogin = async () => {
+    if (!loginForm.email || !loginForm.password) return alert('이메일과 비밀번호를 입력해주세요.');
+    
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return alert(data.error);
+      }
+
+      setCurrentUser(data.user); // DB에서 가져온 진짜 유저 정보 저장
+      setIsLoginModalOpen(false);
+      setLoginForm({ email: '', password: '' }); // 로그인 폼 초기화
+    } catch (error) {
+      alert('서버와 통신 중 오류가 발생했습니다.');
+    }
+  }
+
+  const handleLogout = () => {
+    setCurrentUser(null);
   }
 
   const formatDate = (dateString) => {
@@ -147,6 +220,17 @@ function App() {
         <header className="top-header">
           <h4 className="sub-title">MY BOARD</h4>
           <div className="header-actions">
+            {currentUser ? (
+              <div className="user-info">
+                <span className="user-nickname">{currentUser.nickname}님</span>
+                <button className="auth-btn" onClick={handleLogout}>로그아웃</button>
+              </div>
+            ) : (
+              <div className="auth-buttons">
+                <button className="auth-btn" onClick={() => setIsLoginModalOpen(true)}>로그인</button>
+                <button className="auth-btn highlight" onClick={() => setIsSignupModalOpen(true)}>회원가입</button>
+              </div>
+            )}
             <button className="theme-toggle-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
               {isDarkMode ? '☀️ 화이트모드' : '🌙 다크모드'}
             </button>
@@ -187,9 +271,17 @@ function App() {
               </ul>
 
               <div className="comment-input-area">
-                <input value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="닉네임" className="input-name" />
-                <input value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder="댓글을 남겨보세요..." className="input-content" />
-                <button onClick={handleCommentSubmit} className="send-btn">등록</button>
+                {/* 💡 기존의 닉네임 입력창(<input value={commentName}... />) 삭제 */}
+                <input 
+                  value={commentContent} 
+                  onChange={(e) => setCommentContent(e.target.value)} 
+                  placeholder={currentUser ? "댓글을 남겨보세요..." : "로그인 후 댓글을 작성할 수 있습니다."} 
+                  className="input-content" 
+                  disabled={!currentUser} /* 로그인이 안 되어있으면 입력창 비활성화 */
+                />
+                <button onClick={handleCommentSubmit} className="send-btn" disabled={!currentUser}>
+                  등록
+                </button>
               </div>
             </div>
           </div>
@@ -265,7 +357,7 @@ function App() {
               </div>
               <div className="modal-body">
                 <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="게시물 제목을 입력하세요" />
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="작성자 닉네임" />
+                {/* 💡 기존의 닉네임 입력창(<input value={name}... />) 삭제 */}
                 <textarea 
                   value={content} 
                   onChange={(e) => setContent(e.target.value)} 
@@ -276,12 +368,84 @@ function App() {
               <div className="modal-footer">
                 <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
                 <button 
-                 className="primary-btn" 
-                 onClick={handleSubmit}
-                 disabled={!title || !name || !content} /* 💡 세 가지 중 하나라도 비어있으면 비활성화 */
+                  className="primary-btn" 
+                  onClick={handleSubmit}
+                  disabled={!title || !content} /* 💡 name 조건을 삭제 (제목과 내용만 확인) */
                 >
-                 게시글 등록
+                  게시글 등록
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==== [회원가입 모달] ==== */}
+        {isSignupModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsSignupModalOpen(false)}>
+            <div className="modal-content auth-modal" onClick={(e) => e.stopPropagation()}>
+              <h2>회원가입</h2>
+              <div className="modal-body">
+                <input 
+                  type="email" 
+                  placeholder="이메일 (@gsm.hs.kr)" 
+                  value={signupForm.email} 
+                  onChange={(e) => setSignupForm({...signupForm, email: e.target.value})} 
+                />
+                <input 
+                  type="text" 
+                  placeholder="이름 (실명)" 
+                  value={signupForm.name} 
+                  onChange={(e) => setSignupForm({...signupForm, name: e.target.value})} 
+                />
+                <input 
+                  type="text" 
+                  placeholder="사용할 닉네임" 
+                  value={signupForm.nickname} 
+                  onChange={(e) => setSignupForm({...signupForm, nickname: e.target.value})} 
+                />
+                <input 
+                  type="password" 
+                  placeholder="비밀번호" 
+                  value={signupForm.password} 
+                  onChange={(e) => setSignupForm({...signupForm, password: e.target.value})} 
+                />
+                <input 
+                  type="password" 
+                  placeholder="비밀번호 확인" 
+                  value={signupForm.passwordConfirm} 
+                  onChange={(e) => setSignupForm({...signupForm, passwordConfirm: e.target.value})} 
+                />
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={() => setIsSignupModalOpen(false)}>취소</button>
+                <button className="primary-btn" onClick={handleSignup}>가입하기</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==== [로그인 모달] ==== */}
+        {isLoginModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsLoginModalOpen(false)}>
+            <div className="modal-content auth-modal" onClick={(e) => e.stopPropagation()}>
+              <h2>로그인</h2>
+              <div className="modal-body">
+                <input 
+                  type="email" 
+                  placeholder="이메일" 
+                  value={loginForm.email} 
+                  onChange={(e) => setLoginForm({...loginForm, email: e.target.value})} 
+                />
+                <input 
+                  type="password" 
+                  placeholder="비밀번호" 
+                  value={loginForm.password} 
+                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})} 
+                />
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={() => setIsLoginModalOpen(false)}>취소</button>
+                <button className="primary-btn" onClick={handleLogin}>로그인</button>
               </div>
             </div>
           </div>

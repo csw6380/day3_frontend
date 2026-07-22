@@ -483,3 +483,64 @@ button:disabled {
   grid-column: 1 / -1; /* 그리드의 모든 칸을 무시하고 전체 가로폭을 사용 */
   width: 100%;
 }
+
+/* ==== 상단 헤더 인증 버튼 스타일 ==== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.auth-btn:hover {
+  background-color: var(--border-color);
+}
+
+.auth-btn.highlight {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+  font-weight: bold;
+}
+
+.auth-btn.highlight:hover {
+  background-color: var(--accent-hover);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-nickname {
+  font-weight: bold;
+  color: var(--text-purple);
+  font-size: 15px;
+}
+
+/* ==== 회원가입/로그인 모달 전용 스타일 ==== */
+.modal-content.auth-modal {
+  max-width: 420px;
+}
+
+.modal-content.auth-modal h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  text-align: center;
+}
