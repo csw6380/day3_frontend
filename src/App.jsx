@@ -20,6 +20,31 @@ const CustomSelect = ({ value, options, onChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 💡 [추가] 앱이 처음 열리거나 새로고침될 때 토큰을 확인하여 자동 로그인 처리
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      fetch(`${API_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}` // Header에 토큰을 포함시켜 전달
+        }
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error('토큰이 만료되었거나 유효하지 않습니다.');
+        })
+        .then((data) => {
+          setCurrentUser(data.user); // 유효한 토큰이면 사용자 정보 복원
+        })
+        .catch(() => {
+          // 만료되었거나 유효하지 않은 토큰이면 삭제 처리
+          localStorage.removeItem('token');
+          setCurrentUser(null);
+        });
+    }
+  }, []);
+
   return (
     <div className="custom-select-container" ref={selectRef}>
       <div className="custom-select-trigger" onClick={() => setIsOpen(!isOpen)}>
@@ -176,9 +201,10 @@ function App() {
   }
 
   // ==== [수정] 진짜 서버와 연동된 로그인 처리 ====
+  // ==== [수정] 로그인 처리 (토큰 저장 로직 추가) ====
   const handleLogin = async () => {
     if (!loginForm.email || !loginForm.password) return alert('이메일과 비밀번호를 입력해주세요.');
-    
+
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -191,17 +217,23 @@ function App() {
         return alert(data.error);
       }
 
-      setCurrentUser(data.user); // DB에서 가져온 진짜 유저 정보 저장
+      // 💡 [추가] 브라우저에 JWT 토큰 저장
+      localStorage.setItem('token', data.token);
+
+      setCurrentUser(data.user);
       setIsLoginModalOpen(false);
-      setLoginForm({ email: '', password: '' }); // 로그인 폼 초기화
+      setLoginForm({ email: '', password: '' });
     } catch (error) {
       alert('서버와 통신 중 오류가 발생했습니다.');
     }
   }
 
+  // ==== [수정] 로그아웃 처리 (토큰 삭제 로직 추가) ====
   const handleLogout = () => {
+    // 💡 [추가] 저장되어 있던 토큰 삭제
+    localStorage.removeItem('token');
     setCurrentUser(null);
-  }
+  };
 
   const formatDate = (dateString) => {
     const d = new Date(dateString);
@@ -317,7 +349,17 @@ function App() {
                   { value: 'asc', label: '오름차순' }
                 ]}
               />
-              <button className="primary-btn write-btn" onClick={() => setIsModalOpen(true)}>
+              <button 
+                className="primary-btn write-btn" 
+                onClick={() => {
+                  if (!currentUser) {
+                    alert('로그인이 필요합니다. 먼저 로그인해 주세요!');
+                    setIsLoginModalOpen(true);
+                    return;
+                  }
+                  setIsModalOpen(true);
+                }}
+              >
                 ✍️ 새 글 작성
               </button>
             </div>
@@ -366,13 +408,20 @@ function App() {
                 />
               </div>
               <div className="modal-footer">
+                {/* 💡 비로그인 상태 시 안내 경고문 표시 (선택 사항) */}
+                {!currentUser && (
+                  <span style={{ color: '#ff6b6b', fontSize: '13px', marginRight: 'auto' }}>
+                    ⚠️ 로그인이 필요합니다.
+                  </span>
+                )}
                 <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
                 <button 
                   className="primary-btn" 
                   onClick={handleSubmit}
-                  disabled={!title || !content} /* 💡 name 조건을 삭제 (제목과 내용만 확인) */
+                  /* 💡 [핵심] !currentUser 조건을 추가하여 로그인 안 되어있으면 입력칸을 다 채워도 비활성화 */
+                  disabled={!currentUser || !title || !content}
                 >
-                  게시글 등록
+                  {currentUser ? '게시글 등록' : '로그인 필요'}
                 </button>
               </div>
             </div>
