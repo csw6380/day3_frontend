@@ -405,11 +405,11 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 className="search-input"
               />
-              <select value={sort} onChange={(e) => setSort(e.target.value)} className="sort-select">
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
                 <option value="created_at">최신순</option>
                 <option value="title">제목순</option>
                 <option value="name">작성자순</option>
-                <option value="likes">인기순</option> {/* 💡 인기순 추가 */}
+                <option value="likes">인기순</option>
               </select>
               <CustomSelect 
                 value={sortOrder} 
