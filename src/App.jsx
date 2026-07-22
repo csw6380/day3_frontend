@@ -193,7 +193,7 @@ function App() {
                )
              })}
              {messages.length === 0 && <p className="empty-msg">개설된 채팅방이 없습니다.</p>}
-            </ul>
+          </ul>
           </div>
         )}
       </div>
