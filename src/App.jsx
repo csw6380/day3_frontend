@@ -172,21 +172,27 @@ function App() {
             </div>
 
             <ul className="chat-list">
-              {messages.map((msg) => (
-                <li key={msg.id} className="chat-item" onClick={() => handleSelectMessage(msg)}>
-                  <div className="chat-avatar">
-                    {msg.title.charAt(0)}
-                  </div>
-                  <div className="chat-info">
-                    <div className="chat-title">{msg.title}</div>
-                    <div className="chat-preview">{msg.name}</div>
-                  </div>
-                  <div className="chat-meta">
-                    <div className="chat-date">{formatDate(msg.created_at)}</div>
-                  </div>
-                </li>
-              ))}
-              {messages.length === 0 && <p className="empty-msg">개설된 채팅방이 없습니다.</p>}
+              {messages.map((msg) => {
+                // 안전장치: title이나 name이 null일 경우 기본값 설정
+               const safeTitle = msg.title || '제목 없음';
+               const safeName = msg.name || '알 수 없음';
+
+               return (
+                 <li key={msg.id} className="chat-item" onClick={() => handleSelectMessage(msg)}>
+                    <div className="chat-avatar">
+                     {safeTitle.charAt(0)} {/* 이제 무조건 값이 있으므로 에러가 안 남! */}
+                   </div>
+                   <div className="chat-info">
+                     <div className="chat-title">{safeTitle}</div>
+                     <div className="chat-preview">{safeName}</div>
+                   </div>
+                    <div className="chat-meta">
+                      <div className="chat-date">{formatDate(msg.created_at)}</div>
+                   </div>
+                  </li>
+               )
+             })}
+             {messages.length === 0 && <p className="empty-msg">개설된 채팅방이 없습니다.</p>}
             </ul>
           </div>
         )}
