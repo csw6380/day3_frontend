@@ -275,7 +275,13 @@ function App() {
               </div>
               <div className="modal-footer">
                 <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
-                <button className="primary-btn" onClick={handleSubmit}>게시글 등록</button>
+                <button 
+                 className="primary-btn" 
+                 onClick={handleSubmit}
+                 disabled={!title || !name || !content} /* 💡 세 가지 중 하나라도 비어있으면 비활성화 */
+                >
+                 게시글 등록
+                </button>
               </div>
             </div>
           </div>

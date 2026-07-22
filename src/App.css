@@ -134,6 +134,13 @@ button.primary-btn:hover, button.send-btn:hover {
   background-color: var(--accent-hover);
 }
 
+button:disabled {
+  background-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* ==== 커스텀 셀렉트(드롭다운) UI ==== */
 .custom-select-container {
   position: relative;
@@ -469,7 +476,9 @@ button.primary-btn:hover, button.send-btn:hover {
 
 .empty-msg {
   color: var(--text-secondary);
-  padding: 20px 0;
-  font-size: 15px;
+  padding: 40px 0;
+  font-size: 16px;
   text-align: center;
+  grid-column: 1 / -1; /* 그리드의 모든 칸을 무시하고 전체 가로폭을 사용 */
+  width: 100%;
 }
