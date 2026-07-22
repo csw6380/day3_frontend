@@ -1,0 +1,122 @@
+/* 전체 기본 설정 */
+* {
+  box-sizing: border-box;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+body {
+  background-color: #f4f7f6;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+/* 메인 컨테이너 */
+#root, .app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+h1, h2, h3 {
+  color: #2c3e50;
+  margin-top: 0;
+}
+
+/* 입력창 및 셀렉트 박스 */
+input[type="text"], input, select {
+  padding: 10px 14px;
+  margin-right: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: #3b82f6;
+}
+
+/* 버튼 */
+button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 10px;
+}
+
+button:hover {
+  background-color: #2563eb;
+}
+
+/* 상단 컨트롤 영역 (검색, 정렬, 새 글 작성) */
+.control-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+/* 리스트 스타일 */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background-color: #fafafa;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+/* 클릭 가능한 게시글 아이템 */
+.message-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+/* 상세 보기 본문 영역 */
+.detail-content {
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  margin: 20px 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* 뒤로가기 버튼 */
+.back-button {
+  background-color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  background-color: #4b5563;
+}
+
+/* 작은 글씨 (날짜 등) */
+small {
+  color: #9ca3af;
+  margin-left: 8px;
+}
