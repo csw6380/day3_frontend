@@ -135,10 +135,11 @@ button.primary-btn:hover, button.send-btn:hover {
 }
 
 button:disabled {
-  background-color: var(--border-color) !important;
-  color: var(--text-secondary) !important;
+  background-color: #3b0764 !important; /* 깊고 어두운 보라색 */
+  color: #9ca3af !important; /* 글씨는 살짝 어둡게 */
+  border: none;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 /* ==== 커스텀 셀렉트(드롭다운) UI ==== */
@@ -358,10 +359,10 @@ button:disabled {
 }
 
 .cancel-btn:hover {
-  background-color: var(--border-color);
-  color: var(--text-primary);
+  background-color: #ef4444 !important; /* 세련된 붉은색 (Tailwind Red 500) */
+  border-color: #ef4444 !important;
+  color: #ffffff !important; /* 글씨는 흰색으로 강조 */
 }
-
 
 /* ==== [2] 게시판 상세 뷰 ==== */
 .article-view {
