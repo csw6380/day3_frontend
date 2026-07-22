@@ -72,8 +72,18 @@ function App() {
       .then((data) => setMessages(data))
   }
 
+  // 👇 여기를 수정해 주세요! 👇
   useEffect(() => {
+    // 1. 처음 화면이 켜질 때 한 번 데이터를 불러옵니다.
     fetchMessages()
+
+    // 2. 3초(3000ms)마다 백그라운드에서 조용히 데이터를 다시 불러옵니다.
+    const interval = setInterval(() => {
+      fetchMessages()
+    }, 3000)
+
+    // 3. 화면이 꺼지거나 검색 조건이 바뀔 때 기존 타이머를 삭제하여 충돌을 막습니다.
+    return () => clearInterval(interval)
   }, [searchQuery, sortBy, sortOrder])
 
   const handleSubmit = () => {
