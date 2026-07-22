@@ -300,7 +300,7 @@ function App() {
       <div className="app-container">
         
         <header className="top-header">
-          <h4 className="sub-title">MY BOARD</h4>
+          <h4 className="sub-title">방명록</h4>
           <div className="header-actions">
             {currentUser ? (
               <div className="user-info">
@@ -314,7 +314,7 @@ function App() {
               </div>
             )}
             <button className="theme-toggle-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
-              {isDarkMode ? '☀️ 화이트모드' : '🌙 다크모드'}
+              {isDarkMode ? '화이트모드' : '다크모드'}
             </button>
           </div>
         </header>
@@ -394,7 +394,7 @@ function App() {
           /* ==== [기본 목록 모드] ==== */
           <div className="chat-list-view">
             <div className="board-header">
-              <h1>커뮤니티 게시판</h1>
+              <h1>커뮤니티 방명록</h1>
             </div>
 
             <div className="control-panel">
@@ -405,12 +405,16 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 className="search-input"
               />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
-                <option value="created_at">최신순</option>
-                <option value="title">제목순</option>
-                <option value="name">작성자순</option>
-                <option value="likes">인기순</option>
-              </select>
+              <CustomSelect 
+                value={sortBy} 
+                onChange={setSortBy} 
+                options={[
+                  { value: 'created_at', label: '최신순' },
+                  { value: 'title', label: '제목순' },
+                  { value: 'name', label: '작성자순' },
+                  { value: 'likes', label: '인기순' }
+                ]}
+              />
               <CustomSelect 
                 value={sortOrder} 
                 onChange={setSortOrder} 
@@ -430,7 +434,7 @@ function App() {
                   setIsModalOpen(true);
                 }}
               >
-                ✍️ 새 글 작성
+                새 글 작성
               </button>
             </div>
 
@@ -485,7 +489,7 @@ function App() {
                 {/* 💡 비로그인 상태 시 안내 경고문 표시 (선택 사항) */}
                 {!currentUser && (
                   <span style={{ color: '#ff6b6b', fontSize: '13px', marginRight: 'auto' }}>
-                    ⚠️ 로그인이 필요합니다.
+                    로그인이 필요합니다.
                   </span>
                 )}
                 <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
