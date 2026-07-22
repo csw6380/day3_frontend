@@ -66,6 +66,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
+  const [postLikes, setPostLikes] = useState([]);
 
   const [signupForm, setSignupForm] = useState({
     email: '', name: '', nickname: '', password: '', passwordConfirm: ''
@@ -136,9 +137,16 @@ function App() {
 
   const handleSelectMessage = (msg) => {
     setSelectedMessage(msg)
+    
+    // 1. 기존: 댓글 불러오기
     fetch(`${API_URL}/messages/${msg.id}/comments`)
       .then((res) => res.json())
       .then((data) => setComments(data))
+
+    // 💡 2. [추가] 좋아요 누른 유저 목록 불러오기
+    fetch(`${API_URL}/messages/${msg.id}/likes`)
+      .then((res) => res.json())
+      .then((data) => setPostLikes(data))
   }
 
   const handleBackToList = () => {
@@ -244,6 +252,49 @@ function App() {
     return d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
   }
 
+  const handleLikeToggle = async () => {
+    // 비로그인 사용자는 좋아요 클릭 불가
+    if (!currentUser) {
+      alert('로그인 후 이용해 주세요!');
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/messages/${selectedMessage.id}/likes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id }) // 내 유저 ID를 서버로 전송
+      });
+      const data = await response.json();
+
+      if (data.isLiked) {
+        // ❤️ 좋아요가 추가된 경우: postLikes 배열에 내 ID 추가
+        setPostLikes([...postLikes, currentUser.id]);
+        
+        // 화면의 좋아요 숫자 1 증가 (실시간 반영)
+        setSelectedMessage({
+          ...selectedMessage, 
+          like_count: Number(selectedMessage.like_count) + 1 
+        });
+      } else {
+        // 🤍 좋아요가 취소된 경우: postLikes 배열에서 내 ID 제거
+        setPostLikes(postLikes.filter(id => id !== currentUser.id));
+        
+        // 화면의 좋아요 숫자 1 감소 (실시간 반영)
+        setSelectedMessage({
+          ...selectedMessage, 
+          like_count: Number(selectedMessage.like_count) - 1 
+        });
+      }
+
+      // 목록 새로고침 (목록 화면의 인기순 정렬 및 좋아요 갯수 업데이트를 위해)
+      fetchMessages(); 
+    } catch (error) {
+      alert('좋아요 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <div className={`app-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="app-container">
@@ -274,11 +325,34 @@ function App() {
             <div className="article-header">
               <button className="back-btn" onClick={handleBackToList}>← 목록으로 돌아가기</button>
               <h2 className="article-title">{selectedMessage.title || '제목 없음'}</h2>
-              <div className="article-meta">
-                <span className="article-author">{selectedMessage.name || '알 수 없음'}</span>
-                <span className="article-date">
-                  {formatDate(selectedMessage.created_at)} {formatTime(selectedMessage.created_at)}
-                </span>
+              <div className="article-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span className="article-author">{selectedMessage.name || '알 수 없음'}</span>
+                  <span className="article-date">
+                    {formatDate(selectedMessage.created_at)} {formatTime(selectedMessage.created_at)}
+                  </span>
+                </div>
+                
+                {/* 💡 좋아요 버튼 추가 영역 */}
+                <button 
+                  onClick={handleLikeToggle} 
+                  style={{ 
+                    background: 'none', 
+                    border: '1px solid #ddd', 
+                    borderRadius: '20px',
+                    padding: '5px 12px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    backgroundColor: isDarkMode ? '#333' : '#fff'
+                  }}
+                >
+                  {/* 현재 로그인한 유저가 postLikes 배열에 포함되어 있다면 꽉 찬 하트, 아니면 빈 하트 */}
+                  {currentUser && postLikes.includes(currentUser.id) ? '❤️' : '🤍'}
+                  <span style={{ fontWeight: 'bold' }}>{selectedMessage.like_count || 0}</span>
+                </button>
               </div>
             </div>
 
@@ -331,15 +405,12 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 className="search-input"
               />
-              <CustomSelect 
-                value={sortBy} 
-                onChange={setSortBy} 
-                options={[
-                  { value: 'created_at', label: '최신 순' },
-                  { value: 'title', label: '제목 가나다 순' },
-                  { value: 'name', label: '이름 가나다 순' }
-                ]}
-              />
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="sort-select">
+                <option value="created_at">최신순</option>
+                <option value="title">제목순</option>
+                <option value="name">작성자순</option>
+                <option value="likes">인기순</option> {/* 💡 인기순 추가 */}
+              </select>
               <CustomSelect 
                 value={sortOrder} 
                 onChange={setSortOrder} 
@@ -378,6 +449,10 @@ function App() {
                       <div className="chat-preview">{safeName}</div>
                     </div>
                     <div className="chat-meta">
+                      {/* 💡 좋아요 갯수 표시 추가 */}
+                      <div className="chat-likes" style={{ color: '#ff6b6b', fontSize: '0.9rem', marginBottom: '4px', textAlign: 'right' }}>
+                        ❤️ {msg.like_count || 0}
+                      </div>
                       <div className="chat-date">{formatDate(msg.created_at)}</div>
                     </div>
                   </li>
