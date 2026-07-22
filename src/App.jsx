@@ -20,31 +20,6 @@ const CustomSelect = ({ value, options, onChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 💡 [추가] 앱이 처음 열리거나 새로고침될 때 토큰을 확인하여 자동 로그인 처리
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      fetch(`${API_URL}/me`, {
-        headers: {
-          Authorization: `Bearer ${token}` // Header에 토큰을 포함시켜 전달
-        }
-      })
-        .then((res) => {
-          if (res.ok) return res.json();
-          throw new Error('토큰이 만료되었거나 유효하지 않습니다.');
-        })
-        .then((data) => {
-          setCurrentUser(data.user); // 유효한 토큰이면 사용자 정보 복원
-        })
-        .catch(() => {
-          // 만료되었거나 유효하지 않은 토큰이면 삭제 처리
-          localStorage.removeItem('token');
-          setCurrentUser(null);
-        });
-    }
-  }, []);
-
   return (
     <div className="custom-select-container" ref={selectRef}>
       <div className="custom-select-trigger" onClick={() => setIsOpen(!isOpen)}>
@@ -99,6 +74,30 @@ function App() {
   const [loginForm, setLoginForm] = useState({
     email: '', password: ''
   })
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      fetch(`${API_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}` // Header에 토큰을 포함시켜 전달
+        }
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error('토큰이 만료되었거나 유효하지 않습니다.');
+        })
+        .then((data) => {
+          setCurrentUser(data.user); // 유효한 토큰이면 사용자 정보 복원
+        })
+        .catch(() => {
+          // 만료되었거나 유효하지 않은 토큰이면 삭제 처리
+          localStorage.removeItem('token');
+          setCurrentUser(null);
+        });
+    }
+  }, []);
 
   const fetchMessages = () => {
     const query = new URLSearchParams({ search: searchQuery, sort: sortBy, order: sortOrder }).toString();
