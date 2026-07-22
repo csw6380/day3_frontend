@@ -1,7 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+// ==== 커스텀 드롭다운(선택창) 컴포넌트 ====
+const CustomSelect = ({ value, options, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef(null);
+  
+  const selectedOption = options.find(opt => opt.value === value);
+
+  // 메뉴 바깥 클릭 시 닫히도록 처리
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="custom-select-container" ref={selectRef}>
+      <div className="custom-select-trigger" onClick={() => setIsOpen(!isOpen)}>
+        <span>{selectedOption ? selectedOption.label : ''}</span>
+        <span className="arrow" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+      </div>
+      {isOpen && (
+        <ul className="custom-select-menu">
+          {options.map(opt => (
+            <li
+              key={opt.value}
+              className={`custom-select-option ${value === opt.value ? 'selected' : ''}`}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 
 function App() {
   const [messages, setMessages] = useState([])
@@ -16,6 +61,9 @@ function App() {
   const [commentName, setCommentName] = useState('')
   const [commentContent, setCommentContent] = useState('')
   const [isDarkMode, setIsDarkMode] = useState(true)
+  
+  // 모달 열림/닫힘 상태
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const fetchMessages = () => {
     const query = new URLSearchParams({ search: searchQuery, sort: sortBy, order: sortOrder }).toString();
@@ -41,6 +89,7 @@ function App() {
         setTitle('')
         setName('')
         setContent('')
+        setIsModalOpen(false) // 등록 후 모달 닫기
       })
   }
 
@@ -86,7 +135,7 @@ function App() {
       <div className="app-container">
         
         <header className="top-header">
-          <h4 className="sub-title">MY CHATS</h4>
+          <h4 className="sub-title">MY BOARD</h4>
           <div className="header-actions">
             <button className="theme-toggle-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
               {isDarkMode ? '☀️ 화이트모드' : '🌙 다크모드'}
@@ -135,30 +184,40 @@ function App() {
             </div>
           </div>
         ) : (
-          /* ==== [기본 목록 모드 (리스트 유지)] ==== */
+          /* ==== [기본 목록 모드] ==== */
           <div className="chat-list-view">
             <div className="board-header">
-              <h1>저장된 채팅</h1>
+              <h1>커뮤니티 게시판</h1>
             </div>
 
             <div className="control-panel">
-              <input type="text" placeholder="제목 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="created_at">최신 순</option>
-                <option value="title">제목 가나다 순</option>
-                <option value="name">이름 가나다 순</option>
-              </select>
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                <option value="desc">내림차순</option>
-                <option value="asc">오름차순</option>
-              </select>
-            </div>
-
-            <div className="create-panel">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="채팅방(게시물) 제목" />
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="작성자 이름" />
-              <input value={content} onChange={(e) => setContent(e.target.value)} placeholder="게시글 내용" />
-              <button onClick={handleSubmit} className="primary-btn">+</button>
+              <input 
+                type="text" 
+                placeholder="제목 검색..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="search-input"
+              />
+              <CustomSelect 
+                value={sortBy} 
+                onChange={setSortBy} 
+                options={[
+                  { value: 'created_at', label: '최신 순' },
+                  { value: 'title', label: '제목 가나다 순' },
+                  { value: 'name', label: '이름 가나다 순' }
+                ]}
+              />
+              <CustomSelect 
+                value={sortOrder} 
+                onChange={setSortOrder} 
+                options={[
+                  { value: 'desc', label: '내림차순' },
+                  { value: 'asc', label: '오름차순' }
+                ]}
+              />
+              <button className="primary-btn write-btn" onClick={() => setIsModalOpen(true)}>
+                ✍️ 새 글 작성
+              </button>
             </div>
 
             <ul className="chat-list">
@@ -181,8 +240,34 @@ function App() {
                   </li>
                 )
               })}
-              {messages.length === 0 && <p className="empty-msg">개설된 채팅방이 없습니다.</p>}
+              {messages.length === 0 && <p className="empty-msg">작성된 게시글이 없습니다.</p>}
             </ul>
+          </div>
+        )}
+        
+        {/* ==== [게시글 작성 모달] ==== */}
+        {isModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>새 게시글 작성</h2>
+                <button className="close-btn" onClick={() => setIsModalOpen(false)}>✕</button>
+              </div>
+              <div className="modal-body">
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="게시물 제목을 입력하세요" />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="작성자 닉네임" />
+                <textarea 
+                  value={content} 
+                  onChange={(e) => setContent(e.target.value)} 
+                  placeholder="게시글 내용을 작성해주세요..." 
+                  rows="8"
+                />
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
+                <button className="primary-btn" onClick={handleSubmit}>게시글 등록</button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -8,7 +8,7 @@
   padding: 0;
 }
 
-/* 🎨 테마 변수 설정 (다크/라이트 모드) */
+/* 🎨 테마 변수 설정 */
 .dark-theme {
   --bg-main: #121214;
   --bg-container: #1e1e24;
@@ -21,6 +21,7 @@
   --bubble-bg: #2a2a35;
   --avatar-bg: #4c3c73;
   --input-bg: #272730;
+  --modal-bg: rgba(0, 0, 0, 0.7);
 }
 
 .light-theme {
@@ -35,6 +36,7 @@
   --bubble-bg: #f9fafb;
   --avatar-bg: #ddd6fe;
   --input-bg: #ffffff;
+  --modal-bg: rgba(0, 0, 0, 0.4);
 }
 
 /* ==== 전체 레이아웃 ==== */
@@ -89,8 +91,8 @@
   background-color: var(--border-color);
 }
 
-/* ==== 공통 입력 폼 & 버튼 ==== */
-input, select {
+/* ==== 공통 폼 & 버튼 ==== */
+input, textarea {
   background-color: var(--input-bg);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
@@ -101,8 +103,17 @@ input, select {
   transition: border-color 0.2s;
 }
 
-input:focus, select:focus {
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+input:focus, textarea:focus {
   border-color: var(--accent-color);
+}
+
+button {
+  outline: none;
 }
 
 button.primary-btn, button.send-btn {
@@ -123,6 +134,66 @@ button.primary-btn:hover, button.send-btn:hover {
   background-color: var(--accent-hover);
 }
 
+/* ==== 커스텀 셀렉트(드롭다운) UI ==== */
+.custom-select-container {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+}
+
+.custom-select-trigger {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 14px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  user-select: none;
+  transition: border-color 0.2s;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--accent-color);
+}
+
+.custom-select-trigger .arrow {
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.2s;
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  list-style: none;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.custom-select-option {
+  padding: 12px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* 마우스 올렸을 때 세련된 보라색 표시 */
+.custom-select-option:hover {
+  background-color: var(--accent-color);
+  color: white;
+}
+
 /* ==== [1] 메인 목록 뷰 ==== */
 .board-header h1 {
   font-size: 28px;
@@ -134,23 +205,12 @@ button.primary-btn:hover, button.send-btn:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 16px;
-}
-.control-panel input { flex: 3; min-width: 250px; }
-.control-panel select { flex: 1; min-width: 140px; }
-
-.create-panel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 30px;
-  padding-bottom: 30px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
   border-bottom: 1px solid var(--border-color);
 }
-.create-panel > *:nth-child(1) { flex: 1.5; min-width: 180px; }
-.create-panel > *:nth-child(2) { flex: 1; min-width: 120px; }
-.create-panel > *:nth-child(3) { flex: 3; min-width: 300px; }
-.create-panel > button { flex: 0 0 80px; font-size: 20px; }
+.search-input { flex: 3; min-width: 250px; }
+.write-btn { flex: 1; min-width: 140px; }
 
 .chat-list {
   list-style: none;
@@ -216,7 +276,87 @@ button.primary-btn:hover, button.send-btn:hover {
   color: var(--text-purple);
 }
 
-/* ==== [2] 게시판 상세 뷰 (커뮤니티 스타일) ==== */
+/* ==== 게시글 작성 모달 ==== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--modal-bg);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background-color: var(--bg-container);
+  width: 90%;
+  max-width: 600px;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  font-size: 22px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+
+/* ==== [2] 게시판 상세 뷰 ==== */
 .article-view {
   display: flex;
   flex-direction: column;
